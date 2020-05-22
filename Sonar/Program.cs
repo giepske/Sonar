@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Sonar.Initialization;
 using Sonar.Modules;
 
@@ -9,7 +10,7 @@ namespace Sonar
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Console.WriteLine("Getting initializers...");
             var initializers = GetInitializers();
@@ -21,7 +22,7 @@ namespace Sonar
             var modules = GetWebServerModules();
 
             //todo get host from console
-            var results = ExecuteWebServerModules(modules, data, "https://example.com/");
+            var results = await ExecuteWebServerModules(modules, data, "https://example.com/");
 
             Console.WriteLine($"Got {results.Count()} results!");
 
@@ -34,25 +35,33 @@ namespace Sonar
             Console.ReadLine();
         }
 
-        private static IEnumerable<ModuleResult> ExecuteLocalModules(IEnumerable<Type> modules, Data data)
+        private static async Task<List<ModuleResult>> ExecuteLocalModules(IEnumerable<Type> modules, Data data)
         {
+            List<ModuleResult> results = new List<ModuleResult>();
+
             foreach (Type moduleType in modules)
             {
                 var module = (IModule)Activator.CreateInstance(moduleType);
-                yield return module.Execute(data);
+                results.Add(await module.Execute(data));
             }
+
+            return results;
         }
 
-        private static IEnumerable<ModuleResult> ExecuteWebServerModules(IEnumerable<Type> modules, Data data, string host)
+        private static async Task<List<ModuleResult>> ExecuteWebServerModules(IEnumerable<Type> modules, Data data, string host)
         {
+            List<ModuleResult> results = new List<ModuleResult>();
+
             foreach (Type moduleType in modules)
             {
                 var module = (IModule)Activator.CreateInstance(moduleType, new object?[]
                 {
                     host
                 });
-                yield return module.Execute(data);
+                results.Add(await module.Execute(data));
             }
+
+            return results;
         }
 
         private static IEnumerable<Type> GetLocalModules()
