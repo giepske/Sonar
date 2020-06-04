@@ -97,7 +97,7 @@ namespace Sonar.Modules.Implementations
                     }
                     catch (ArgumentNullException e)
                     {
-
+                        
                     }
                     catch (SocketException e)
                     {
@@ -123,7 +123,7 @@ namespace Sonar.Modules.Implementations
             {
                 if (!ipsByTCP.Contains(s))
                 {
-                    serviceDenials.Add(new Denial(s, "Reacts to ICMP but not to TCP"));
+                    serviceDenials.Add(new Denial(s, " Accepts ICMP but not TCP"));
 
                 }
             }
@@ -131,7 +131,7 @@ namespace Sonar.Modules.Implementations
             {
                 if (!ipsByPing.Contains(s))
                 {
-                    serviceDenials.Add(new Denial(s, "Reacts to TCP but not to ICMP"));
+                    serviceDenials.Add(new Denial(s, "Accepts TCP but not ICMP"));
 
                 }
             }
