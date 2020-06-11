@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Sonar.Modules.Implementations
 {
@@ -10,16 +11,16 @@ namespace Sonar.Modules.Implementations
         {
         }
 
-        public override ModuleResult Execute(Data data)
+        public override Task<ModuleResult> Execute(Data data)
         {
             Uri uri = new Uri(Host);
 
             if(Host.StartsWith("https://") || uri.Port == 443)
-                return ModuleResult.Create(this, ResultType.Success, "Host is HTTPS!");
+                return Task.FromResult(ModuleResult.Create(this, ResultType.Success, "Host is HTTPS!"));
             if (Host.StartsWith("http://") || uri.Port == 80)
-                return ModuleResult.Create(this, ResultType.Error, "Host is HTTP!");
+                return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "Host is HTTP!"));
 
-            return ModuleResult.Create(this, ResultType.Error, "Unable to see if host is HTTPS.");
+            return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "Unable to see if host is HTTPS."));
         }
     }
 }

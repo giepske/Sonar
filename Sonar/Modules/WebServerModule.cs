@@ -1,4 +1,5 @@
-﻿using Sonar.Logging;
+﻿using System.Threading.Tasks;
+using Sonar.Logging;
 
 namespace Sonar.Modules
 {
@@ -6,7 +7,7 @@ namespace Sonar.Modules
     {
         protected readonly string Host;
         public abstract string Name { get; set; }
-        public abstract ModuleResult Execute(Data data);
+        public abstract Task<ModuleResult> Execute(Data data);
         public ILogger Logger { get; set; }
 
         protected WebServerModule(string host)
