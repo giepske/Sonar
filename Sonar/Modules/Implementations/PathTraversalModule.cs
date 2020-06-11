@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Sonar.Modules.Implementations
@@ -42,7 +42,7 @@ namespace Sonar.Modules.Implementations
                     _foundHost.Add(url);
             }
 
-            catch (Exception) { }
+            catch (Exception) { /* ignore to prevent cancellation */ }
         }
 
         private async Task ExecutePathTraversal(string url, List<string> directories)
@@ -57,11 +57,17 @@ namespace Sonar.Modules.Implementations
             Task.WaitAll(tasks.ToArray());
         }
 
-        public override ModuleResult Execute(Data data)
+        public override async Task<ModuleResult> Execute(Data data)
         {
-            var pathList = GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt").Result;
-            ExecutePathTraversal("https://cloud.vdarwinkel.nl", pathList);
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
+            await ExecutePathTraversal("", pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
+
+            stopWatch.Stop();
+            result += $"{ Environment.NewLine } Pathtraversal completed in: { stopWatch.Elapsed.TotalSeconds } seconds";
 
             return ModuleResult.Create(this, ResultType.Error, result);
         }
