@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sonar.HtmlReport;
 using Sonar.Initialization;
 using Sonar.Modules;
 
@@ -10,6 +11,8 @@ namespace Sonar
 {
     class Program
     {
+        private static readonly ReportGenerator _reportGenerator = new ReportGenerator();
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("Getting initializers...");
@@ -24,13 +27,15 @@ namespace Sonar
             //todo get host from console
             var results = await ExecuteWebServerModules(modules, data, "https://example.com/");
 
-            Console.WriteLine($"Got {results.Count()} results!");
+            Console.WriteLine($"Got {results.Count} results!");
 
             //todo better logging using logger (and coloring)
             foreach (ModuleResult result in results)
             {
                 Console.WriteLine($"[{result.ModuleName}] [{result.ResultType}] {result.Message}");
             }
+
+            _reportGenerator.GenerateReport(results);
 
             Console.ReadLine();
         }

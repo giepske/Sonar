@@ -63,13 +63,13 @@ namespace Sonar.Modules.Implementations
             stopWatch.Start();
 
             var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
-            await ExecutePathTraversal("", pathList);
+            await ExecutePathTraversal("https://portfolio.vdarwinkel.nl/cv", pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
             stopWatch.Stop();
             result += $"{ Environment.NewLine } Pathtraversal completed in: { stopWatch.Elapsed.TotalSeconds } seconds";
 
-            return ModuleResult.Create(this, ResultType.Error, result);
+            return ModuleResult.Create(this, ResultType.Success, result);
         }
     }
 }
