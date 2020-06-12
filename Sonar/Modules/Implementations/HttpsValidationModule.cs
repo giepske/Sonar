@@ -13,7 +13,7 @@ namespace Sonar.Modules.Implementations
     {
         private readonly string _host;
         private X509Certificate2 _certificate;
-        private List<string> _certificateResults = new List<string>();
+        private readonly List<string> _certificateResults = new List<string>();
 
         public override string Name { get; set; } = "HTTPS Validation";
 
@@ -25,20 +25,22 @@ namespace Sonar.Modules.Implementations
         public override Task<ModuleResult> Execute(Data data)
         {
             //TODO: Change to _host if data isn't hardcoded anymore in program.cs
-            GetCertificate("https://mail.google.com");
+            GetCertificate("http://weevil.info/");
+
+            if (_certificate == null) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate!"));
 
             _certificateResults.Add("Valid from: " + _certificate.GetEffectiveDateString());
             _certificateResults.Add("Valid till: " + _certificate.GetExpirationDateString());
             _certificateResults.Add("Signature name: " + _certificate.SignatureAlgorithm.FriendlyName);
 
-            var result = _certificateResults.Aggregate(_host, (current, cResult) => current + (Environment.NewLine + cResult));
+            var result = _certificateResults.Aggregate(_host, (current, cResult) => current + Environment.NewLine + cResult);
 
             return Task.FromResult(ModuleResult.Create(this, ResultType.Success, result));
         }
 
         private void GetCertificate(string host)
         {
-            HttpWebRequest request = WebRequest.CreateHttp(host);
+            var request = WebRequest.CreateHttp(host);
             request.ServerCertificateValidationCallback += ServerCertificateValidationCallback;
             request.GetResponse();
         }
