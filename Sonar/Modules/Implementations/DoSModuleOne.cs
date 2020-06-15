@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
+using System.Net.NetworkInformation;
+using System.Linq;
+using System.Net.Sockets;
 namespace Sonar.Modules.Implementations
 {
     class DoSModuleOne : LocalModule
@@ -10,7 +12,7 @@ namespace Sonar.Modules.Implementations
         private List<Denial> serviceDenials = new List<Denial>();
         public override Task<ModuleResult> Execute(Data data)
         {
-            string hostip = data.GetData<string>("IpAddress");
+            string hostip = data.GetData<string>("LocalIpAddress");
             CompareServiceData(hostip);
             string denials = "";
             if (!serviceDenials.Any())
