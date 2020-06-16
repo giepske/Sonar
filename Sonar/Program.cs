@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sonar.HtmlReport;
 using Sonar.Initialization;
+using Sonar.Logging;
+using Sonar.Logging.Implementations;
 using Sonar.Modules;
 
 namespace Sonar
 {
     class Program
     {
+        private static readonly ReportGenerator _reportGenerator = new ReportGenerator();
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("Getting initializers...");
@@ -17,47 +24,166 @@ namespace Sonar
 
             Data data = GetData(initializers);
 
-            //todo choose which modules to get and execute
+            int scanType = GetScanType();
+
+            string host = null;
+
+            if (scanType == 2)
+                host = GetHost();
+
             Console.WriteLine("Getting modules...");
-            var modules = GetWebServerModules();
+            var modules = scanType == 1 ? GetLocalModules() : GetWebServerModules();
 
-            //todo get host from console
-            var results = await ExecuteWebServerModules(modules, data, "https://example.com/");
+            List<ModuleResult> results = null;
 
-            Console.WriteLine($"Got {results.Count()} results!");
-
-            //todo better logging using logger (and coloring)
-            foreach (ModuleResult result in results)
+            Console.WriteLine("Starting scan...");
+            if (scanType == 1)
             {
-                Console.WriteLine($"[{result.ModuleName}] [{result.ResultType}] {result.Message}");
+                results = await ExecuteLocalModules<ConsoleLogger>(modules, data);
+            }
+            else if(scanType == 2)
+            {
+                results = await ExecuteWebServerModules<ConsoleLogger>(modules, data, host);
             }
 
+            Console.WriteLine("");
+            Console.WriteLine("Scan finished, here are the results:");
+
+            foreach (ModuleResult result in results)
+            {
+                Log(result);
+            }
+
+            Console.WriteLine("Generating html report");
+            _reportGenerator.GenerateReport(results);
+            Console.WriteLine($"Done! Report can be found at: { Directory.GetCurrentDirectory()}/report.html");
+
+            Console.WriteLine("Done, press enter to exit...");
             Console.ReadLine();
         }
 
-        private static async Task<List<ModuleResult>> ExecuteLocalModules(IEnumerable<Type> modules, Data data)
+        public static void Log(ModuleResult moduleResult)
+        {
+            Console.Write("[");
+
+            SetConsoleColor(ConsoleColor.Cyan);
+
+            Console.Write($"{moduleResult.ModuleName}");
+
+            SetConsoleColor(ConsoleColor.White);
+
+            Console.Write("] [");
+
+            if (moduleResult.ResultType == ResultType.Success)
+            {
+                SetConsoleColor(ConsoleColor.Green);
+            }
+            else if (moduleResult.ResultType == ResultType.Warning)
+            {
+                SetConsoleColor(ConsoleColor.DarkYellow);
+            }
+            else if (moduleResult.ResultType == ResultType.Error)
+            {
+                SetConsoleColor(ConsoleColor.Red);
+            }
+
+            Console.Write($"{moduleResult.ResultType}");
+
+            SetConsoleColor(ConsoleColor.White);
+
+            Console.WriteLine($"] {moduleResult.Message}");
+        }
+
+        private static void SetConsoleColor(ConsoleColor textColor)
+        {
+            Console.ForegroundColor = textColor;
+        }
+
+        private static int GetScanType()
+        {
+            Console.WriteLine("Sonar has 2 scan types, one for your machine/network and one for a host or domain.");
+            Console.WriteLine("Both scan types execute different modules.");
+            Console.WriteLine("Please press the number for which scan you want to execute and press enter:");
+            Console.WriteLine("1. Local scan (your machine/network)");
+            Console.WriteLine("2. WebServer scan (a certain host/domain)");
+
+            bool validScan = false;
+
+            string number;
+
+            do
+            {
+                number = Console.ReadLine();
+
+                if (int.TryParse(number, out int scanType))
+                {
+                    validScan = scanType == 1 || scanType == 2;
+                }
+
+                if (!validScan)
+                {
+                    Console.WriteLine("Incorrect scan type, please type the number of the scan you want to execute and press enter:");
+                }
+            } while (!validScan);
+
+            return int.Parse(number);
+        }
+
+        private static string GetHost()
+        {
+            Console.WriteLine("In order for sonar to do a WebServer scan, we will need an ip address or domain.");
+            Console.WriteLine("Please specify a valid ip address or domain and press enter:");
+
+            do
+            {
+                string host = Console.ReadLine();
+
+                if (IPAddress.TryParse(host, out IPAddress ipAddress))
+                {
+                    return ipAddress.ToString();
+                }
+
+                try
+                {
+                    ipAddress = Dns.GetHostAddresses(host)[0];
+
+                    return ipAddress.ToString();
+                }
+                catch (Exception)
+                {
+                    //ignore
+                }
+
+                Console.WriteLine("Incorrect host, please specify a valid ip address or domain and press enter:");
+            } while (true);
+        }
+
+        private static async Task<List<ModuleResult>> ExecuteLocalModules<TLogger>(IEnumerable<Type> modules, Data data) where TLogger : ILogger, new()
         {
             List<ModuleResult> results = new List<ModuleResult>();
 
             foreach (Type moduleType in modules)
             {
                 var module = (IModule)Activator.CreateInstance(moduleType);
+
+                module.Logger = new TLogger();
+
                 results.Add(await module.Execute(data));
             }
 
             return results;
         }
 
-        private static async Task<List<ModuleResult>> ExecuteWebServerModules(IEnumerable<Type> modules, Data data, string host)
+        private static async Task<List<ModuleResult>> ExecuteWebServerModules<TLogger>(IEnumerable<Type> modules, Data data, string host) where TLogger : ILogger, new()
         {
             List<ModuleResult> results = new List<ModuleResult>();
 
             foreach (Type moduleType in modules)
             {
-                var module = (IModule)Activator.CreateInstance(moduleType, new object?[]
-                {
-                    host
-                });
+                var module = (IModule)Activator.CreateInstance(moduleType, host);
+
+                module.Logger = new TLogger();
+
                 results.Add(await module.Execute(data));
             }
 
@@ -80,7 +206,7 @@ namespace Sonar
             return webServerModules;
         }
 
-        public static IEnumerable<Type> GetInitializers()
+        private static IEnumerable<Type> GetInitializers()
         {
             var initializers = Assembly.GetExecutingAssembly().GetTypes().Where(t =>
                 t.BaseType == typeof(Initializer));

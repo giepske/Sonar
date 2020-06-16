@@ -9,9 +9,11 @@ namespace Sonar.Initialization.Implementations
         {
             using (HttpClient httpClient = new HttpClient())
             {
-                string ip = await httpClient.GetStringAsync("https://icanhazip.com/");
+                string ipAddress = await httpClient.GetStringAsync("http://ipv4.icanhazip.com/");
 
-                dataBuilder.SetData("IpAddress", ip);
+                ipAddress = ipAddress.Trim();
+
+                dataBuilder.SetData("IpAddress", ipAddress);
             }
         }
     }
