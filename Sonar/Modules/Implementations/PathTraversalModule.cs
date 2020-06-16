@@ -50,7 +50,9 @@ namespace Sonar.Modules.Implementations
             var tasks = new List<Task>();
 
             foreach (var directory in directories)
+            {
                 tasks.Add(FindDirectory(url + directory));
+            }
 
             Task.WaitAll(tasks.ToArray());
         }
@@ -60,8 +62,8 @@ namespace Sonar.Modules.Implementations
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var pathList = await GetPathTraversalList("https://raw.githubusercontent.com/Bo0oM/fuzz.txt/master/fuzz.txt");
-            ExecutePathTraversal(data.GetData<string>("IpAddress"), pathList);
+            var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
+            ExecutePathTraversal(_host, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
             stopWatch.Stop();

@@ -131,30 +131,21 @@ namespace Sonar
 
         private static string GetHost()
         {
-            Console.WriteLine("In order for sonar to do a WebServer scan, we will need an ip address or domain.");
-            Console.WriteLine("Please specify a valid ip address or domain and press enter:");
+            Console.WriteLine("In order for sonar to do a WebServer scan, we will need a domain.");
+            Console.WriteLine("Example input (without quotes): \"https://stackoverflow.com/\"");
+            Console.WriteLine("Please specify a valid domain and press enter:");
 
             do
             {
                 string host = Console.ReadLine();
 
-                if (IPAddress.TryParse(host, out IPAddress ipAddress))
+                if (Uri.TryCreate(host, UriKind.Absolute, out var uriResult)
+                    && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
                 {
-                    return ipAddress.ToString();
+                    return uriResult.Scheme + "://" + uriResult.Host + "/";
                 }
 
-                try
-                {
-                    ipAddress = Dns.GetHostAddresses(host)[0];
-
-                    return ipAddress.ToString();
-                }
-                catch (Exception)
-                {
-                    //ignore
-                }
-
-                Console.WriteLine("Incorrect host, please specify a valid ip address or domain and press enter:");
+                Console.WriteLine("Incorrect domain, make sure to add \"http://\" \"https://\", please specify a valid domain and press enter:");
             } while (true);
         }
 
