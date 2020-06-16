@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
+using Sonar.HtmlReport;
 using Sonar.Initialization;
 using Sonar.Logging;
 using Sonar.Logging.Implementations;
@@ -13,6 +15,8 @@ namespace Sonar
 {
     class Program
     {
+        private static readonly ReportGenerator _reportGenerator = new ReportGenerator();
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("Getting initializers...");
@@ -49,6 +53,10 @@ namespace Sonar
             {
                 Log(result);
             }
+
+            Console.WriteLine("Generating html report");
+            _reportGenerator.GenerateReport(results);
+            Console.WriteLine($"Done! Report can be found at: { Directory.GetCurrentDirectory()}/report.html");
 
             Console.WriteLine("Done, press enter to exit...");
             Console.ReadLine();
