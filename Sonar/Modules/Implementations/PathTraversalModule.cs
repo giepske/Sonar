@@ -32,7 +32,7 @@ namespace Sonar.Modules.Implementations
 
         private async Task FindDirectory(string url)
         {
-            var httpClient = new HttpClient();
+            using var httpClient = new HttpClient();
 
             try
             {
@@ -46,7 +46,12 @@ namespace Sonar.Modules.Implementations
 
         private void ExecutePathTraversal(string url, List<string> directories)
         {
-            Task.WaitAll(directories.Select(directory => FindDirectory(url + directory)).ToArray());
+            var tasks = new List<Task>();
+
+            foreach (var directory in directories)
+                tasks.Add(FindDirectory(url + directory));
+
+            Task.WaitAll(tasks.ToArray());
         }
 
         public override async Task<ModuleResult> Execute(Data data)
