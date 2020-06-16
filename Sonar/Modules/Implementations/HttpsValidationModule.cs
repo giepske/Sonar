@@ -24,10 +24,10 @@ namespace Sonar.Modules.Implementations
 
         public override Task<ModuleResult> Execute(Data data)
         {
-            if (!CheckValidHost("https://mail.google.com/"))
+            if (!CheckValidHost())
                 return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "This is not a valid host."));
 
-            GetCertificate("https://mail.google.com/");
+            GetCertificate();
 
             if (_certificate == null) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate."));
 
@@ -40,14 +40,14 @@ namespace Sonar.Modules.Implementations
             return Task.FromResult(ModuleResult.Create(this, ResultType.Success, result));
         }
 
-        private bool CheckValidHost(string host)
+        private bool CheckValidHost()
         {
-            return host.StartsWith("https://") || host.StartsWith("http://");
+            return _host.StartsWith("https://") || _host.StartsWith("http://");
         }
 
-        private void GetCertificate(string host)
+        private void GetCertificate()
         {
-            var request = WebRequest.CreateHttp(host);
+            var request = WebRequest.CreateHttp(_host);
             request.ServerCertificateValidationCallback += ServerCertificateValidationCallback;
             request.GetResponse();
         }
