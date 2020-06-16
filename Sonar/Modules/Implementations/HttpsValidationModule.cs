@@ -33,7 +33,7 @@ namespace Sonar.Modules.Implementations
 
             _certificateResults.Add("Valid from: " + _certificate.GetEffectiveDateString());
             _certificateResults.Add("Valid till: " + _certificate.GetExpirationDateString());
-            _certificateResults.Add("Signature name: " + _certificate.SignatureAlgorithm.FriendlyName);
+            _certificateResults.Add("Signature algorithm: " + _certificate.SignatureAlgorithm.FriendlyName);
 
             var result = _certificateResults.Aggregate(_host + " has a valid SSL Certificate.", (current, cResult) => current + Environment.NewLine + cResult);
 
