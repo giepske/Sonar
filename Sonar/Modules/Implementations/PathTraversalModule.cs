@@ -47,14 +47,7 @@ namespace Sonar.Modules.Implementations
 
         private void ExecutePathTraversal(string url, List<string> directories)
         {
-            var tasks = new List<Task>();
-
-            foreach (var directory in directories)
-            {
-                tasks.Add(FindDirectory(url + directory));
-            }
-
-            Task.WaitAll(tasks.ToArray());
+            Task.WaitAll(directories.Select(directory => FindDirectory(url + directory)).ToArray());
         }
 
         public override async Task<ModuleResult> Execute(Data data)
@@ -62,7 +55,7 @@ namespace Sonar.Modules.Implementations
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
+            var pathList = await GetPathTraversalList("https://github.com/Bo0oM/fuzz.txt");
             ExecutePathTraversal(_host, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
