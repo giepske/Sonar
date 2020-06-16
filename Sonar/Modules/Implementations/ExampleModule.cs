@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Sonar.Modules.Implementations
@@ -8,8 +9,7 @@ namespace Sonar.Modules.Implementations
         public override string Name { get; set; } = "Example Module";
 
         public ExampleModule(string host) : base(host)
-        {
-        }
+        { }
 
         public override Task<ModuleResult> Execute(Data data)
         {

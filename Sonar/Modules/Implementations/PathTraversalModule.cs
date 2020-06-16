@@ -45,7 +45,7 @@ namespace Sonar.Modules.Implementations
             catch (Exception) { /* ignore to prevent cancellation */ }
         }
 
-        private async Task ExecutePathTraversal(string url, List<string> directories)
+        private void ExecutePathTraversal(string url, List<string> directories)
         {
             var tasks = new List<Task>();
 
@@ -63,7 +63,7 @@ namespace Sonar.Modules.Implementations
             stopWatch.Start();
 
             var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
-            await ExecutePathTraversal("https://portfolio.vdarwinkel.nl/cv", pathList);
+            ExecutePathTraversal(_host, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
             stopWatch.Stop();
