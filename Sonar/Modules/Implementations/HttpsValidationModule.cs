@@ -24,18 +24,25 @@ namespace Sonar.Modules.Implementations
 
         public override Task<ModuleResult> Execute(Data data)
         {
-            //TODO: Change to _host if data isn't hardcoded anymore in program.cs
-            GetCertificate("http://weevil.info/");
+            if (!CheckValidHost("https://mail.google.com/"))
+                return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "This is not a valid host."));
 
-            if (_certificate == null) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate!"));
+            GetCertificate("https://mail.google.com/");
+
+            if (_certificate == null) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate."));
 
             _certificateResults.Add("Valid from: " + _certificate.GetEffectiveDateString());
             _certificateResults.Add("Valid till: " + _certificate.GetExpirationDateString());
             _certificateResults.Add("Signature name: " + _certificate.SignatureAlgorithm.FriendlyName);
 
-            var result = _certificateResults.Aggregate(_host, (current, cResult) => current + Environment.NewLine + cResult);
+            var result = _certificateResults.Aggregate(_host + " has a valid SSL Certificate.", (current, cResult) => current + Environment.NewLine + cResult);
 
             return Task.FromResult(ModuleResult.Create(this, ResultType.Success, result));
+        }
+
+        private bool CheckValidHost(string host)
+        {
+            return host.StartsWith("https://") || host.StartsWith("http://");
         }
 
         private void GetCertificate(string host)
