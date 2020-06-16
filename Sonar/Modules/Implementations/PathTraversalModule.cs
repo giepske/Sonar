@@ -13,11 +13,6 @@ namespace Sonar.Modules.Implementations
         private readonly string _host;
         private ConcurrentBag<string> _foundHost = new ConcurrentBag<string>();
 
-        public PathTraversalModule(string host) : base(host)
-        {
-            _host = host;
-        }
-
         public override string Name { get; set; } = "Path traversal";
 
         private async Task<List<string>> GetPathTraversalList(string url)
@@ -59,11 +54,12 @@ namespace Sonar.Modules.Implementations
 
         public override async Task<ModuleResult> Execute(Data data)
         {
+            string url = data.GetData<string>("IpAddress");
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
             var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
-            await ExecutePathTraversal("https://portfolio.vdarwinkel.nl/cv", pathList);
+            await ExecutePathTraversal(url, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
             stopWatch.Stop();
