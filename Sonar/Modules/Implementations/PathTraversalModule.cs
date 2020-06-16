@@ -25,8 +25,7 @@ namespace Sonar.Modules.Implementations
             var response = await new HttpClient().GetAsync(url);
             var result = await response.Content.ReadAsStringAsync();
 
-            List<string> pathList = result.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
-            pathList.RemoveRange(0, 8);
+            List<string> pathList = result.Split(new[] { "\n" }, StringSplitOptions.None).ToList();
 
             return pathList;
         }
@@ -55,7 +54,7 @@ namespace Sonar.Modules.Implementations
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var pathList = await GetPathTraversalList("https://github.com/Bo0oM/fuzz.txt");
+            var pathList = await GetPathTraversalList("https://raw.githubusercontent.com/Bo0oM/fuzz.txt/master/fuzz.txt");
             ExecutePathTraversal(_host, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
