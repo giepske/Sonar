@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
+using Sonar.Logging;
 
 namespace Sonar.Modules.Implementations
 {
@@ -11,14 +15,14 @@ namespace Sonar.Modules.Implementations
     {
         public override string Name { get; set; } = "DoS Module";
         private List<Denial> serviceDenials = new List<Denial>();
-        public override Task<ModuleResult> Execute(Data data)
+        public override async Task<ModuleResult> Execute(Data data)
         {
-            string hostip = data.GetData<string>("LocalIpAddress");
-            CompareServiceData(hostip);
+            IPAddress hostip = data.GetData<IPAddress>("LocalIpAddress");
+            await CompareServiceData(hostip.ToString());
             string denials = "";
             if (!serviceDenials.Any())
             {
-                return Task.FromResult(ModuleResult.Create(this, ResultType.Success, "All hosts' services are up!"));
+                return ModuleResult.Create(this, ResultType.Success, "All hosts' services are up!");
             }
             else
             {
@@ -26,29 +30,56 @@ namespace Sonar.Modules.Implementations
                 {
                     denials += Environment.NewLine + d.IP + " - denials - " + d.ServiceDenialed;
                 }
-                return Task.FromResult(ModuleResult.Create(this, ResultType.Warning, denials));
+                return ModuleResult.Create(this, ResultType.Warning, denials);
             }
 
         }
 
-        public List<string> GetActiveHostsByIP(string hostIP)
+        public async Task<List<string>> GetActiveHostsByIP(string hostIP)
         {
             List<string> byPing = new List<string>();
             bool pingable = false;
             string[] separateIP = hostIP.Split('.');
             string subip = separateIP[0] + "." + separateIP[1] + "." + separateIP[2] + ".";
-            using (Ping pinger = new Ping())
+
+            Logger.Log(LogType.Info, $"Pinging {subip}1 till {subip}255, this might take some time...");
+
+            ConcurrentQueue<int> nrQueue = new ConcurrentQueue<int>(Enumerable.Range(0, 255));
+
+            int threadCount = 255; //we use 1024 threads for the port scanner so 255 threads shouldn't be a problem
+
+            List<Thread> threads = new List<Thread>();
+
+            for (int i = 0; i < threadCount; i++)
             {
-                for (int i = 1; i < 255; i++)
+                Thread thread = new Thread(() =>
                 {
-                    string tempip = subip + i;
-                    PingReply reply = pinger.Send(tempip);
-                    pingable = reply.Status == IPStatus.Success;
-                    if (pingable)
+                    while (!nrQueue.IsEmpty)
                     {
-                        byPing.Add(tempip);
+                        if (nrQueue.TryDequeue(out int nr))
+                        {
+                            using (Ping pinger = new Ping())
+                            {
+                                string tempip = subip + nr;
+                                PingReply reply = pinger.Send(tempip, 500);
+                                pingable = reply.Status == IPStatus.Success;
+                                if (pingable)
+                                {
+                                    byPing.Add(tempip);
+                                }
+                            }
+                        }
                     }
-                }
+                });
+
+                thread.IsBackground = true;
+                thread.Start();
+                threads.Add(thread);
+            }
+
+            while (threads.Any(thread => thread.IsAlive))
+            {
+                await Task.Delay(1000);
             }
 
             return byPing;
@@ -77,47 +108,71 @@ namespace Sonar.Modules.Implementations
 
 
 
-        public List<string> GetActiveHostsByTCP(string hostIP)
+        public async Task<List<string>> GetActiveHostsByTCP(string hostIP)
         {
             List<string> byTCP = new List<string>();
             int[] commonports = new int[3] { 25, 80, 443 };
             string[] separateIP = hostIP.Split('.');
             string subip = separateIP[0] + "." + separateIP[1] + "." + separateIP[2] + ".";
-            for (int i = 1; i < 255; i++)
-            {
-                for (int j = 0; j < commonports.Length; j++)
-                {
-                    currip = subip + i;
-                    if (TryConnectTcp(currip, commonports[j]))
-                    {
-                        if (!byTCP.Contains(currip))
-                        {
-                            byTCP.Add(currip);
-                        }
-                        
-                    }
-                    else
-                    {
-                        if (byTCP.Contains(currip))
-                        {
-                            serviceDenials.Add(new Denial(currip, " denials tcp on port: " + commonports[j]));
-                        }
-                    }
-                }
 
+            ConcurrentQueue<int> nrQueue = new ConcurrentQueue<int>(Enumerable.Range(0, 255));
+
+            int threadCount = 255; //we use 1024 threads for the port scanner so 255 threads shouldn't be a problem
+
+            List<Thread> threads = new List<Thread>();
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                Thread thread = new Thread(() =>
+                {
+                    while (!nrQueue.IsEmpty)
+                    {
+                        if (nrQueue.TryDequeue(out int nr))
+                        {
+                            for (int j = 0; j < commonports.Length; j++)
+                            {
+                                string currip = subip + nr;
+                                if (TryConnectTcp(currip, commonports[j]))
+                                {
+                                    if (!byTCP.Contains(currip))
+                                    {
+                                        byTCP.Add(currip);
+                                    }
+
+                                }
+                                else
+                                {
+                                    if (byTCP.Contains(currip))
+                                    {
+                                        serviceDenials.Add(
+                                            new Denial(currip, " denials tcp on port: " + commonports[j]));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                thread.IsBackground = true;
+                thread.Start();
+                threads.Add(thread);
             }
+
+            while (threads.Any(thread => thread.IsAlive))
+            {
+                await Task.Delay(1000);
+            }
+
             return byTCP;
         }
 
 
 
 
-        public void CompareServiceData(string hostIP)
+        public async Task CompareServiceData(string hostIP)
         {
-            List<string> ipsByPing = GetActiveHostsByIP(hostIP);
-            List<string> ipsByTCP = GetActiveHostsByTCP(hostIP);
-
-
+            List<string> ipsByPing = await GetActiveHostsByIP(hostIP);
+            List<string> ipsByTCP = await GetActiveHostsByTCP(hostIP);
 
             foreach (string s in ipsByPing)
             {
@@ -140,17 +195,9 @@ namespace Sonar.Modules.Implementations
 
     class Denial
     {
-        public string IP
-        {
-            get { return IP; }
-            set { IP = value; }
-        }
+        public string IP { get; set; }
 
-        public string ServiceDenialed
-        {
-            get { return ServiceDenialed; }
-            set { ServiceDenialed = value; }
-        }
+        public string ServiceDenialed { get; set; }
 
         public Denial(string ip, string service)
         {

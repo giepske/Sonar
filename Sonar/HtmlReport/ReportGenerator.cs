@@ -41,7 +41,7 @@ namespace Sonar.HtmlReport
                 tables += ResultToHtmlTable(result.ModuleName, result.Message);
             });
 
-            string style = File.ReadAllText("CssTemplate.css");
+            string style = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "HtmlReport", "CssTemplate.css"));
             string html = $@"
             
             <html>

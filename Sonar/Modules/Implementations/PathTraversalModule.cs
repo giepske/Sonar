@@ -25,15 +25,14 @@ namespace Sonar.Modules.Implementations
             var response = await new HttpClient().GetAsync(url);
             var result = await response.Content.ReadAsStringAsync();
 
-            List<string> pathList = result.Split(new[] { "\r\n" }, StringSplitOptions.None).ToList();
-            pathList.RemoveRange(0, 8);
+            List<string> pathList = result.Split(new[] { "\n" }, StringSplitOptions.None).ToList();
 
             return pathList;
         }
 
         private async Task FindDirectory(string url)
         {
-            var httpClient = new HttpClient();
+            using var httpClient = new HttpClient();
 
             try
             {
@@ -45,14 +44,12 @@ namespace Sonar.Modules.Implementations
             catch (Exception) { /* ignore to prevent cancellation */ }
         }
 
-        private async Task ExecutePathTraversal(string url, List<string> directories)
+        private void ExecutePathTraversal(string url, List<string> directories)
         {
             var tasks = new List<Task>();
 
             foreach (var directory in directories)
-            {
                 tasks.Add(FindDirectory(url + directory));
-            }
 
             Task.WaitAll(tasks.ToArray());
         }
@@ -62,8 +59,8 @@ namespace Sonar.Modules.Implementations
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var pathList = await GetPathTraversalList("https://www.vulnerability-lab.com/resources/documents/587.txt");
-            await ExecutePathTraversal("https://portfolio.vdarwinkel.nl/cv", pathList);
+            var pathList = await GetPathTraversalList("https://raw.githubusercontent.com/Bo0oM/fuzz.txt/master/fuzz.txt");
+            ExecutePathTraversal(_host, pathList);
             var result = string.Join(Environment.NewLine, _foundHost);
 
             stopWatch.Stop();
