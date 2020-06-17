@@ -27,9 +27,10 @@ namespace Sonar.Modules.Implementations
             if (!CheckValidHost())
                 return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "This is not a valid host."));
 
-            GetCertificate();
+            var successful = GetCertificate();
 
             if (_certificate == null) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate."));
+            if (!successful) return Task.FromResult(ModuleResult.Create(this, ResultType.Error, "The host does not have a valid SSL Certificate."));
 
             _certificateResults.Add("Valid from: " + _certificate.GetEffectiveDateString());
             _certificateResults.Add("Valid till: " + _certificate.GetExpirationDateString());
@@ -45,16 +46,25 @@ namespace Sonar.Modules.Implementations
             return _host.StartsWith("https://") || _host.StartsWith("http://");
         }
 
-        private void GetCertificate()
+        private bool GetCertificate()
         {
             var request = WebRequest.CreateHttp(_host);
             request.ServerCertificateValidationCallback += ServerCertificateValidationCallback;
-            request.GetResponse();
+            try
+            {
+                request.GetResponse();
+                return true;
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
         }
 
         private bool ServerCertificateValidationCallback(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslpolicyerrors)
         {
             _certificate = new X509Certificate2(certificate);
+            if (sslpolicyerrors == SslPolicyErrors.RemoteCertificateChainErrors) return false;
             return sslpolicyerrors == SslPolicyErrors.None;
         }
     }
