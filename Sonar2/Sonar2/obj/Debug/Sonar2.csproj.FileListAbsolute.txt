@@ -1,0 +1,10 @@
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\bin\Debug\Sonar2.exe.config
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\bin\Debug\Sonar2.exe
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\bin\Debug\Sonar2.pdb
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.csprojAssemblyReference.cache
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.Form1.resources
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.Properties.Resources.resources
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.csproj.GenerateResource.cache
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.csproj.CoreCompileInputs.cache
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.exe
+C:\Users\sipet\Desktop\CSD\PROJECT\Sonar\Sonar2\Sonar2\obj\Debug\Sonar2.pdb
